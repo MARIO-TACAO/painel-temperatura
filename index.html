@@ -4,37 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Monitoramento - IoT</title>
-    <!-- Servidores alternativos para fugir do bloqueio de rede (ERR_CONNECTION_TIMED_OUT) -->
-    <script src="https://cloudflare.com"></script>
-    <script src="https://cloudflare.com"></script>
+    
+    <!-- Bibliotecas carregadas via UNPKG para evitar o bloqueio de rede da sua operadora -->
+    <script src="https://unpkg.com"></script>
     <script src="https://unpkg.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col justify-between">
+<body style="background-color: #111827; color: #f3f4f6; font-family: sans-serif; min-height: 100vh; margin: 0; display: flex; flex-col; justify-content: space-between; flex-direction: column;">
 
     <!-- Cabeçalho -->
-    <header class="bg-gray-800 border-b border-gray-700 p-6 shadow-md text-center">
-        <h1 class="text-2xl font-bold tracking-wide uppercase text-yellow-500">[NOME DA SUA EMPRESA]</h1>
-        <p class="text-gray-400 text-sm mt-1">Sistema de Telemetria e Monitoramento de Temperatura a Distância</p>
+    <header style="background-color: #1f2937; border-bottom: 1px solid #374151; padding: 24px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <h1 style="color: #f59e0b; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px;">[NOME DA SUA EMPRESA]</h1>
+        <p style="color: #9ca3af; margin: 4px 0 0 0; font-size: 14px;">Sistema de Telemetria e Monitoramento de Temperatura a Distância</p>
     </header>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-4xl w-full mx-auto p-4 flex-grow flex flex-col gap-6 justify-center">
+    <main style="max-w: 896px; width: 100%; margin: auto; padding: 16px; flex-grow: 1; display: flex; flex-direction: column; gap: 24px; justify-content: center; box-sizing: border-box;">
         
         <!-- Cartão de Destaque -->
-        <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg text-center max-w-sm mx-auto w-full">
-            <h2 class="text-gray-400 font-medium uppercase text-xs tracking-wider">Última Leitura</h2>
-            <div class="text-5xl font-black text-yellow-500 mt-2" id="temp-atual">--.-°C</div>
-            <p class="text-xs text-gray-500 mt-2" id="tempo-atualizacao">Atualizando...</p>
+        <div style="background-color: #1f2937; padding: 24px; border-radius: 16px; border: 1px solid #374151; text-align: center; max-w: 384px; margin: 0 auto; width: 100%; box-sizing: border-box;">
+            <h2 style="color: #9ca3af; margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Última Leitura</h2>
+            <div id="temp-atual" style="font-size: 48px; font-weight: 900; color: #f59e0b; margin-top: 8px;">--.-°C</div>
+            <p id="tempo-atualizacao" style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">Atualizando...</p>
         </div>
 
         <!-- Área do Gráfico -->
-        <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg w-full">
-            <canvas id="graficoTemperatura" class="w-full h-72"></canvas>
+        <div style="background-color: #1f2937; padding: 24px; border-radius: 16px; border: 1px solid #374151; width: 100%; box-sizing: border-box;">
+            <div style="height: 288px; width: 100%;">
+                <canvas id="graficoTemperatura"></canvas>
+            </div>
         </div>
     </main>
 
     <!-- Rodapé -->
-    <footer class="text-center p-4 text-xs text-gray-500 border-t border-gray-800">
+    <footer style="text-center; padding: 16px; font-size: 12px; color: #6b7280; border-top: 1px solid #1f2937; text-align: center;">
         &copy; 2026 SYSTEM REFRIGERACAO - Todos os direitos reservados.
     </footer>
 
@@ -43,7 +45,7 @@
         const SUPABASE_URL = "https://lbdyurjlzsnljjgqffga.supabase.co/rest/v1/leituras_temperatura";
         const SUPABASE_KEY = "sb_publishable_J7GFHjEHu8ZXlQfHghDNcA_2JIwLcT3";
         
-        // CORREÇÃO CRÍTICA: Inicializa o cliente do Supabase antes de qualquer outra função tentar usá-lo
+        // Inicializa o cliente do Supabase
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // Inicialização do Gráfico
@@ -95,12 +97,12 @@
 
                 if (ultimoRegistro.temperatura === -999) {
                     tempElement.innerText = "SENSOR FORA";
-                    tempElement.style.color = "#ef4444"; // Força vermelho caso o Tailwind demore para carregar
-                    tempElement.style.fontSize = "1.875rem";
+                    tempElement.style.color = "#ef4444"; 
+                    tempElement.style.fontSize = "30px";
                 } else {
                     tempElement.innerText = `${ultimoRegistro.temperatura.toFixed(1)}°C`;
-                    tempElement.style.color = "#f59e0b"; // Volta para o amarelo/âmbar
-                    tempElement.style.fontSize = "3rem";
+                    tempElement.style.color = "#f59e0b"; 
+                    tempElement.style.fontSize = "48px";
                 }
 
                 const labels = dadosCronologicos.map(item => new Date(item.criado_em).toLocaleTimeString('pt-BR'));
