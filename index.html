@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Monitoramento - IoT</title>
-    
-    <!-- Bibliotecas carregadas via UNPKG para evitar o bloqueio de rede da sua operadora -->
-    <script src="https://unpkg.com"></script>
-    <script src="https://unpkg.com"></script>
+    <!-- Gráficos nativos em biblioteca ultra estável -->
+    <script src="https://cloudflare.com"></script>
 </head>
-<body style="background-color: #111827; color: #f3f4f6; font-family: sans-serif; min-height: 100vh; margin: 0; display: flex; flex-col; justify-content: space-between; flex-direction: column;">
+<body style="background-color: #111827; color: #f3f4f6; font-family: sans-serif; min-height: 100vh; margin: 0; display: flex; justify-content: space-between; flex-direction: column;">
 
     <!-- Cabeçalho -->
     <header style="background-color: #1f2937; border-bottom: 1px solid #374151; padding: 24px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -36,19 +34,18 @@
     </main>
 
     <!-- Rodapé -->
-    <footer style="text-center; padding: 16px; font-size: 12px; color: #6b7280; border-top: 1px solid #1f2937; text-align: center;">
-        &copy; 2026 SYSTEM REFRIGERACAO - Todos os direitos reservados.
+    <footer style="padding: 16px; font-size: 12px; color: #6b7280; border-top: 1px solid #1f2937; text-align: center;">
+        &copy; 2026 [Nome da sua Empresa] - Todos os direitos reservados.
     </footer>
 
     <script>
-        // CONFIGURAÇÃO DO SUPABASE (COLOQUE SEUS DADOS REAIS AQUI)
-        const SUPABASE_URL = "https://lbdyurjlzsnljjgqffga.supabase.co/rest/v1/leituras_temperatura";
-        const SUPABASE_KEY = "sb_publishable_J7GFHjEHu8ZXlQfHghDNcA_2JIwLcT3";
-        
-        // Inicializa o cliente do Supabase
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // CONFIGURAÇÃO MANUAL DA REQUISIÇÃO (LIVRE DE BIBLIOTECAS)
+        // ATENÇÃO: COLOQUE SEU LINK DO SUPABASE COMPLETO COM O FINAL DA TABELA
+        // Exemplo: "https://supabase.co"
+        const ENDERECO_API = "SUA_URL_DO_SUPABASE_AQUI/rest/v1/leituras_temperatura";
+        const CHAVE_API = "SUA_CHAVE_ANON_DO_SUPABASE_AQUI";
 
-        // Inicialização do Gráfico
+        // Inicialização do Gráfico Nativo
         const ctx = document.getElementById('graficoTemperatura').getContext('2d');
         const grafico = new Chart(ctx, {
             type: 'line',
@@ -74,47 +71,58 @@
             }
         });
 
-        // Função para buscar dados
+        // Função nativa para buscar dados direto da API Rest do Supabase
         async function atualizarDados() {
-            const { data, error } = await supabaseClient
-                .from('leituras_temperatura')
-                .select('*')
-                .order('criado_em', { ascending: false })
-                .limit(20);
-
-            if (error) {
-                console.error("Erro ao buscar dados:", error);
-                return;
-            }
-
-            if (data && data.length > 0) {
-                const dadosCronologicos = data.reverse();
-                const ultimoRegistro = dadosCronologicos[dadosCronologicos.length - 1];
+            try {
+                // Monta a URL buscando os últimos 20 dados ordenados
+                const urlCompleta = ENDERECO_API + "?select=*&order=criado_em.desc&limit=20";
                 
-                const tempElement = document.getElementById('temp-atual');
-                const horaLeitura = new Date(ultimoRegistro.criado_em).toLocaleTimeString('pt-BR');
-                document.getElementById('tempo-atualizacao').innerText = `Última tentativa às ${horaLeitura}`;
+                const resposta = await fetch(urlCompleta, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': CHAVE_API,
+                        'Authorization': 'Bearer ' + CHAVE_API
+                    }
+                });
 
-                if (ultimoRegistro.temperatura === -999) {
-                    tempElement.innerText = "SENSOR FORA";
-                    tempElement.style.color = "#ef4444"; 
-                    tempElement.style.fontSize = "30px";
-                } else {
-                    tempElement.innerText = `${ultimoRegistro.temperatura.toFixed(1)}°C`;
-                    tempElement.style.color = "#f59e0b"; 
-                    tempElement.style.fontSize = "48px";
+                if (!resposta.ok) {
+                    throw new Error("Erro na resposta do servidor: " + resposta.status);
                 }
 
-                const labels = dadosCronologicos.map(item => new Date(item.criado_em).toLocaleTimeString('pt-BR'));
-                const valores = dadosCronologicos.map(item => item.temperatura === -999 ? null : item.temperatura);
+                const data = await resposta.json();
 
-                grafico.data.labels = labels;
-                grafico.data.datasets[0].data = valores;
-                grafico.update();
+                if (data && data.length > 0) {
+                    const dadosCronologicos = data.reverse();
+                    const ultimoRegistro = dadosCronologicos[dadosCronologicos.length - 1];
+                    
+                    const tempElement = document.getElementById('temp-atual');
+                    const horaLeitura = new Date(ultimoRegistro.criado_em).toLocaleTimeString('pt-BR');
+                    document.getElementById('tempo-atualizacao').innerText = `Última tentativa às ${horaLeitura}`;
+
+                    // Lógica para detecção do Sensor Desconectado
+                    if (ultimoRegistro.temperatura === -999) {
+                        tempElement.innerText = "SENSOR FORA";
+                        tempElement.style.color = "#ef4444"; 
+                        tempElement.style.fontSize = "30px";
+                    } else {
+                        tempElement.innerText = ultimoRegistro.temperatura.toFixed(1) + "°C";
+                        tempElement.style.color = "#f59e0b"; 
+                        tempElement.style.fontSize = "48px";
+                    }
+
+                    const labels = dadosCronologicos.map(item => new Date(item.criado_em).toLocaleTimeString('pt-BR'));
+                    const valores = dadosCronologicos.map(item => item.temperatura === -999 ? null : item.temperatura);
+
+                    grafico.data.labels = labels;
+                    grafico.data.datasets[0].data = valores;
+                    grafico.update();
+                }
+            } catch (erro) {
+                console.error("Falha ao atualizar painel:", erro);
             }
         }
 
-        // Executa imediatamente e agenda para repetir a cada 1 segundo
+        // Roda ao ligar e repete a cada 1 segundo
         atualizarDados();
         setInterval(atualizarDados, 1000);
     </script>
